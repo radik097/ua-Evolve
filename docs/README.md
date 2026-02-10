@@ -2,7 +2,14 @@
 
 Полнофункциональная SPA для управления регистрациями участников с захватом фото, админ-панелью и интеграцией с GitHub.
 
-**Статус:** ✓ Production-ready | 🔒 Безопасная | 📱 Мобильная
+**Статус:** ✓ Production-ready | 🔒 Encrypted (AES-GCM) | 🚀 Cloudflare Worker | 📱 Мобильная
+
+**New in v2.0:**
+- 🔐 **End-to-end encryption** (localStorage + registrations)
+- ⚡ **Cloudflare Worker** for edge-level HMAC validation
+- 🔑 **Password-derived keys** (PBKDF2, 100k iterations)
+- 📝 **User authentication system** (email + password, 7-day sessions)
+- 📊 **Encrypted statistics** and analytics
 
 ---
 
@@ -17,35 +24,58 @@
 
 ## 🏗️ Архитектура
 
+### Current Architecture (with Cloudflare Worker)
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        GitHub Pages                         │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │  📱 Frontend (HTML/CSS/JS)                             │ │
-│  │  • Форма регистрации                                   │ │
-│  │  • Захват фото (WebRTC)                                │ │
-│  │  • Админ-панель (защита SHA256)                        │ │
-│  └──────────────┬───────────────────────────────────────┘ │
-└────────────────┼─────────────────────────────────────────┘
-                 │
-                 │ fetch() / GitHub API
-                 ↓
-         ┌───────────────────────────────────────┐
-         │  🔄 GitHub Actions Workflow           │
-         │  • Валидация данных                   │
-         │  • Сохранение в /data/registrations   │
-         │  • Безопасность (встроенный token)    │
-         │  • Статистика                         │
-         └───────────────────────────────────────┘
-                 │
-                 ↓
-         ┌───────────────────────────────────────┐
-         │  📊 GitHub Repository                 │
-         │  /data/registrations/*.json           │
-         │  /events.json                         │
-         │  /stats.json                          │
-         └───────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                        GitHub Pages                          │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │  📱 Frontend (HTML/CSS/JS)                             │  │
+│  │  • Форма регистрации                                   │  │
+│  │  • Захват фото (WebRTC)                                │  │
+│  │  • Админ-панель (защита SHA256)                        │  │
+│  │  • Шифрование registrations (AES-GCM)                  │  │
+│  │  • HMAC подпись запросов                               │  │
+│  └──────────────┬───────────────────────────────────────┘  │
+└─────────────────┼──────────────────────────────────────────┘
+                  │
+        HMAC-подписанный JSON
+                  │
+                  ↓
+        ┌─────────────────────────────────────────┐
+        │  ⚡ Cloudflare Worker (Edge)           │
+        │  • HMAC валидация сигнатуры            │
+        │  • Timestamp проверка (60s window)     │
+        │  • Безопасное хранение APP_SECRET      │
+        │  • CORS обработка                      │
+        └──────────────┬──────────────────────────┘
+                       │
+           repository_dispatch event
+                       │
+                       ↓
+        ┌──────────────────────────────────────────┐
+        │  🔄 GitHub Actions Workflow              │
+        │  • Валидация данных                      │
+        │  • Сохранение в /data/registrations      │
+        │  • Встроенный GITHUB_TOKEN               │
+        │  • Статистика                            │
+        └──────────────┬──────────────────────────┘
+                       │
+                       ↓
+        ┌──────────────────────────────────────────┐
+        │  📊 GitHub Repository                    │
+        │  /data/registrations/*.json (зашифров)  │
+        │  /events.json                            │
+        │  /stats.json (зашифров)                  │
+        └──────────────────────────────────────────┘
 ```
+
+**Key Security Features:**
+- 🔐 **HMAC-SHA256** signing (prevents tampering)
+- 🕐 **Timestamp validation** (prevents replay attacks)
+- 📦 **AES-GCM encryption** (localStorage + registrations)
+- 🔑 **Session-based key** (re-derived from password on login)
+- 🚀 **Edge validation** (Cloudflare Worker validates before GitHub)
 
 ---
 
@@ -93,7 +123,47 @@ git push -u origin main
 
 # 5. Активировать GitHub Actions
 # Перейти на github.com → Settings → Actions → Allow all actions
-## 👤 User Authentication System (NEW!)
+```
+
+### 4️⃣ 🚀 Развернуть Cloudflare Worker (Security Enhancement)
+
+**Why:** Adds edge-level HMAC validation before registrations reach GitHub. Prevents tampering and replay attacks.
+
+**Quick Start:**
+
+```bash
+# 1. Install Wrangler
+npm install -g @cloudflare/wrangler
+
+# 2. Login to Cloudflare
+wrangler login
+
+# 3. Generate APP_SECRET
+openssl rand -hex 32
+
+# 4. Create GitHub PAT at https://github.com/settings/tokens
+# Scopes: repo, workflow
+
+# 5. Add secrets
+wrangler secret put GITHUB_TOKEN
+wrangler secret put APP_SECRET
+
+# 6. Deploy
+wrangler deploy
+# Save the Worker URL!
+```
+
+**Update `app.js` CONFIG:**
+```javascript
+const CONFIG = {
+    WORKER_URL: 'https://event-worker-xxxx.workers.dev',
+    APP_SECRET: 'your-32-byte-hex-secret'
+};
+```
+
+**Complete guide:** See [WORKER-DEPLOYMENT.md](../WORKER-DEPLOYMENT.md) and [DEPLOYMENT-CHECKLIST.md](../DEPLOYMENT-CHECKLIST.md)
+
+
 
 ### Features
 - 📧 **Email-based registration** with password protection
@@ -163,15 +233,51 @@ Users can click the "🚪 Logout" button in the header to:
 
 ## 🔐 Безопасность
 
+### 🔒 Data Encryption (AES-GCM-256)
+
+**localStorage is now encrypted** with password-derived keys:
+
+```
+User Password + Salt (PBKDF2, 100k iterations, SHA-256) → AES-GCM-256 Key
+                                                         ↓
+                    localStorage['registrations'] = {enc: true, iv, data}
+                    localStorage['stats'] = {enc: true, iv, data}
+```
+
+**Key Storage:**
+- Derived key stored in `sessionStorage` (volatile)
+- Lost on browser close → user must log in again
+- Salt stored in user object (persisted, unique per user)
+
+**Auto-Migration:**
+- Plaintext data detected and encrypted on first read
+- Seamless transition for existing users
+
+### ⚡ Edge Security (Cloudflare Worker)
+
+**Frontend requests are HMAC-signed:**
+
+```javascript
+const payload = { type, data, timestamp };
+const signature = HMAC-SHA256(payload, APP_SECRET);
+
+// Send: { type, data, timestamp, signature }
+```
+
+**Worker validates:**
+1. ✅ Signature matches (prevents tampering)
+2. ✅ Timestamp within 60-second window (prevents replay)
+3. ✅ Then routes to GitHub API safely
+
 ### ⚠️ Критические риски и решения
 
 #### Risk #1: GitHub PAT в браузере
 **Проблема:** Если вставить Personal Access Token в JS-код, любой сможет удалить репо.
 
 **Решение в нашей архитектуре:**
-- ✅ Используем **GitHub Actions** как прокси
-- ✅ GitHub Actions использует встроенный `GITHUB_TOKEN` (безопасен)
-- ✅ Фронтенд → HTTP запрос на webhook → GitHub Actions → Git Commit
+- ✅ Используем **Cloudflare Worker** как безопасный прокси
+- ✅ Worker хранит GITHUB_TOKEN в Cloudflare Secrets (не видно фронтенду)
+- ✅ Фронтенд → HMAC-подписанный запрос → Worker → GitHub API
 - ✅ Ваш PAT никогда не попадает в браузер
 
 #### Risk #2: Админ пароль
@@ -262,7 +368,36 @@ const CONFIG = {
     GITHUB_OWNER: 'YOUR_USERNAME',      // ← Ваше имя
     GITHUB_REPO: 'queue-app-data',      // ← Имя репо
     GITHUB_BRANCH: 'main',
+    WORKER_URL: 'https://event-worker-xxxx.workers.dev',
+    APP_SECRET: 'your-app-secret-hex'
 };
+```
+
+### Настроить Cloudflare Worker
+
+1. **Update wrangler.toml:**
+```toml
+[vars]
+GITHUB_REPO = "your-username/your-repo"
+GITHUB_BRANCH = "main"
+```
+
+2. **Update Worker Secrets:**
+```bash
+wrangler secret put GITHUB_TOKEN
+wrangler secret put APP_SECRET
+```
+
+3. **Deploy:**
+```bash
+wrangler deploy
+```
+
+4. **Update Frontend CONFIG** (see above)
+
+**Testing Worker:**
+```bash
+wrangler tail  # View live logs
 ```
 
 ### Изменить события
