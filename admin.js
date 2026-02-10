@@ -26,6 +26,38 @@ const ENC_KEY_USER = 'queue_enc_user';
 
 let encryptionKey = null;
 
+function sanitizeText(value) {
+    return DOMPurify.sanitize(String(value ?? ''), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+}
+
+function setText(el, value) {
+    if (!el) return;
+    el.textContent = sanitizeText(value);
+}
+
+function setPlaceholder(el, value) {
+    if (!el) return;
+    el.setAttribute('placeholder', sanitizeText(value));
+}
+
+function clearElement(el) {
+    if (!el) return;
+    while (el.firstChild) {
+        el.removeChild(el.firstChild);
+    }
+}
+
+function createActionButton(label, className, title, onClick) {
+    const btn = document.createElement('button');
+    btn.className = className;
+    if (title) {
+        btn.title = sanitizeText(title);
+    }
+    setText(btn, label);
+    btn.addEventListener('click', onClick);
+    return btn;
+}
+
 const TRANSLATIONS = {
     uk: {
         adminPageTitle: 'Адмін-панель',
@@ -387,7 +419,7 @@ function applyTheme(theme) {
 
     const toggleBtn = document.getElementById('themeToggle');
     if (toggleBtn) {
-        toggleBtn.textContent = isDark ? t('themeLight') : t('themeDark');
+        setText(toggleBtn, isDark ? t('themeLight') : t('themeDark'));
         toggleBtn.setAttribute('aria-pressed', String(isDark));
     }
 }
@@ -414,19 +446,19 @@ function applyLanguage(language) {
     const translations = TRANSLATIONS[language] || TRANSLATIONS.uk;
 
     document.documentElement.lang = language;
-    document.title = translations.adminPageTitle;
+    document.title = sanitizeText(translations.adminPageTitle);
 
     document.querySelectorAll('[data-i18n]').forEach((el) => {
         const key = el.getAttribute('data-i18n');
         if (translations[key]) {
-            el.textContent = translations[key];
+            setText(el, translations[key]);
         }
     });
 
     document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
         const key = el.getAttribute('data-i18n-placeholder');
         if (translations[key]) {
-            el.setAttribute('placeholder', translations[key]);
+            setPlaceholder(el, translations[key]);
         }
     });
 }
@@ -493,7 +525,7 @@ function setupLoginForm() {
 
 function showLoginError(message) {
     const errorDiv = document.getElementById('loginError');
-    errorDiv.textContent = message;
+    setText(errorDiv, message);
     errorDiv.style.display = 'block';
     
     setTimeout(() => {
@@ -603,8 +635,13 @@ async function loadRegistrations() {
         updateLastRefresh();
     } catch (err) {
         console.error('Error loading registrations:', err);
-        document.getElementById('registrationsList').innerHTML = 
-            `<p>${t('registrationsLoadError')}</p>`;
+        const list = document.getElementById('registrationsList');
+        if (list) {
+            clearElement(list);
+            const p = document.createElement('p');
+            setText(p, t('registrationsLoadError'));
+            list.appendChild(p);
+        }
     }
 }
 
@@ -618,7 +655,7 @@ function updateLastRefresh() {
         second: '2-digit'
     });
 
-    indicator.textContent = t('lastRefreshLabel', { time: timeText });
+    setText(indicator, t('lastRefreshLabel', { time: timeText }));
 }
 
 async function loadEncryptionKey() {
@@ -727,43 +764,107 @@ async function fetchRegistrationsFromGitHub() {
 
 function displayRegistrations(registrations) {
     const list = document.getElementById('registrationsList');
-    
+    if (!list) return;
+
+    clearElement(list);
+
     if (registrations.length === 0) {
-        list.innerHTML = `<p style="padding: 20px; text-align: center;">${t('registrationsEmpty')}</p>`;
+        const empty = document.createElement('p');
+        empty.style.padding = '20px';
+        empty.style.textAlign = 'center';
+        setText(empty, t('registrationsEmpty'));
+        list.appendChild(empty);
         return;
     }
-    
-    list.innerHTML = registrations.map((reg) => {
-        const phoneStatus = reg.phone
-            ? (reg.phoneVerified ? t('phoneVerifiedLabel') : t('phoneUnverifiedLabel'))
-            : '';
-        const phoneStatusLine = phoneStatus ? `<small>${phoneStatus}</small>` : '';
-        const verifyButton = reg.userId && reg.phone && !reg.phoneVerified
-            ? `<button class="btn btn-primary" onclick="verifyUserPhone('${reg.userId}')" title="Verify phone">${t('verifyPhoneButton')}</button>`
-            : '';
 
-        return `
-        <div class="registration-item">
-            <div class="registration-photo">
-                👤
-            </div>
-            <div class="registration-info">
-                <strong>${reg.name}</strong>
-                <small>${reg.phone || '-'}</small>
-                ${phoneStatusLine}
-                ${reg.eventName ? `<small>${t('registrationEvent')} ${reg.eventName}</small>` : ''}
-                <small>${t('registeredAt')} ${new Date(reg.timestamp).toLocaleString(getLocale())}</small>
-                <small style="color: #07c; font-weight: bold;">Attendance: ${reg.attendanceCount || 0} times</small>
-            </div>
-            <div class="registration-actions">
-                ${verifyButton}
-                <button class="btn btn-primary" onclick="recordAttendance('${reg.id}')" title="Mark attendance for today">✓ Attended</button>
-                <button class="btn btn-secondary" onclick="editRegistration('${reg.id}')" title="Edit registration">✎</button>
-                <button class="btn btn-danger" onclick="deleteRegistration('${reg.id}')" title="Delete registration">✕</button>
-            </div>
-        </div>
-    `;
-    }).join('');
+    registrations.forEach((reg) => {
+        const item = document.createElement('div');
+        item.className = 'registration-item';
+
+        const photo = document.createElement('div');
+        photo.className = 'registration-photo';
+        setText(photo, '👤');
+
+        const info = document.createElement('div');
+        info.className = 'registration-info';
+
+        const name = document.createElement('strong');
+        setText(name, reg.name);
+        info.appendChild(name);
+
+        const phone = document.createElement('small');
+        setText(phone, reg.phone || '-');
+        info.appendChild(phone);
+
+        if (reg.phone) {
+            const status = reg.phoneVerified ? t('phoneVerifiedLabel') : t('phoneUnverifiedLabel');
+            const statusLine = document.createElement('small');
+            setText(statusLine, status);
+            info.appendChild(statusLine);
+        }
+
+        if (reg.eventName) {
+            const eventLine = document.createElement('small');
+            setText(eventLine, `${t('registrationEvent')} ${reg.eventName}`);
+            info.appendChild(eventLine);
+        }
+
+        const registeredAt = document.createElement('small');
+        setText(registeredAt, `${t('registeredAt')} ${new Date(reg.timestamp).toLocaleString(getLocale())}`);
+        info.appendChild(registeredAt);
+
+        const attendance = document.createElement('small');
+        attendance.style.color = '#07c';
+        attendance.style.fontWeight = 'bold';
+        setText(attendance, `Attendance: ${reg.attendanceCount || 0} times`);
+        info.appendChild(attendance);
+
+        const actions = document.createElement('div');
+        actions.className = 'registration-actions';
+
+        if (reg.userId && reg.phone && !reg.phoneVerified) {
+            actions.appendChild(
+                createActionButton(
+                    t('verifyPhoneButton'),
+                    'btn btn-primary',
+                    'Verify phone',
+                    () => verifyUserPhone(reg.userId)
+                )
+            );
+        }
+
+        actions.appendChild(
+            createActionButton(
+                '✓ Attended',
+                'btn btn-primary',
+                'Mark attendance for today',
+                () => recordAttendance(reg.id)
+            )
+        );
+
+        actions.appendChild(
+            createActionButton(
+                '✎',
+                'btn btn-secondary',
+                'Edit registration',
+                () => editRegistration(reg.id)
+            )
+        );
+
+        actions.appendChild(
+            createActionButton(
+                '✕',
+                'btn btn-danger',
+                'Delete registration',
+                () => deleteRegistration(reg.id)
+            )
+        );
+
+        item.appendChild(photo);
+        item.appendChild(info);
+        item.appendChild(actions);
+        list.appendChild(item);
+    });
 }
 
 function filterRegistrations() {
@@ -781,7 +882,12 @@ function filterRegistrations() {
 
 function updateEventFilter() {
     const select = document.getElementById('eventFilterSelect');
-    select.innerHTML = `<option value="">${t('filterAll')}</option>`;
+    if (!select) return;
+    clearElement(select);
+    const option = document.createElement('option');
+    option.value = '';
+    setText(option, t('filterAll'));
+    select.appendChild(option);
 }
 
 function editRegistration(id) {
@@ -966,8 +1072,13 @@ async function loadEvents() {
         displayEvents(events);
     } catch (err) {
         console.error('Error loading events:', err);
-        document.getElementById('eventsList').innerHTML = 
-            `<p>${t('eventsLoadError')}</p>`;
+        const list = document.getElementById('eventsList');
+        if (list) {
+            clearElement(list);
+            const p = document.createElement('p');
+            setText(p, t('eventsLoadError'));
+            list.appendChild(p);
+        }
     }
 }
 
@@ -993,25 +1104,67 @@ async function fetchEventsFromGitHub() {
 
 function displayEvents(events) {
     const list = document.getElementById('eventsList');
-    
+    if (!list) return;
+
+    clearElement(list);
+
     if (events.length === 0) {
-        list.innerHTML = `<p>${t('eventsEmpty')}</p>`;
+        const empty = document.createElement('p');
+        setText(empty, t('eventsEmpty'));
+        list.appendChild(empty);
         return;
     }
-    
-    list.innerHTML = events.map(event => `
-        <div class="event-card">
-            <h4>${event.name}</h4>
-            <p><strong>${t('eventCardId')}</strong> ${event.id}</p>
-            <p><strong>${t('eventCardType')}</strong> ${event.type}</p>
-            <p><strong>${t('eventCardTime')}</strong> ${event.start} - ${event.end}</p>
-            ${event.days ? `<p><strong>${t('eventCardDays')}</strong> ${event.days.join(', ')}</p>` : ''}
-            <div class="event-card-actions">
-                <button class="btn btn-secondary" onclick="editEvent('${event.id}')">${t('eventEdit')}</button>
-                <button class="btn btn-danger" onclick="deleteEvent('${event.id}')">${t('eventDelete')}</button>
-            </div>
-        </div>
-    `).join('');
+
+    events.forEach((event) => {
+        const card = document.createElement('div');
+        card.className = 'event-card';
+
+        const title = document.createElement('h4');
+        setText(title, event.name);
+        card.appendChild(title);
+
+        const idLine = document.createElement('p');
+        const idLabel = document.createElement('strong');
+        setText(idLabel, t('eventCardId'));
+        idLine.appendChild(idLabel);
+        idLine.appendChild(document.createTextNode(` ${sanitizeText(event.id)}`));
+        card.appendChild(idLine);
+
+        const typeLine = document.createElement('p');
+        const typeLabel = document.createElement('strong');
+        setText(typeLabel, t('eventCardType'));
+        typeLine.appendChild(typeLabel);
+        typeLine.appendChild(document.createTextNode(` ${sanitizeText(event.type)}`));
+        card.appendChild(typeLine);
+
+        const timeLine = document.createElement('p');
+        const timeLabel = document.createElement('strong');
+        setText(timeLabel, t('eventCardTime'));
+        timeLine.appendChild(timeLabel);
+        timeLine.appendChild(document.createTextNode(` ${sanitizeText(event.start)} - ${sanitizeText(event.end)}`));
+        card.appendChild(timeLine);
+
+        if (event.days) {
+            const daysLine = document.createElement('p');
+            const daysLabel = document.createElement('strong');
+            setText(daysLabel, t('eventCardDays'));
+            daysLine.appendChild(daysLabel);
+            daysLine.appendChild(document.createTextNode(` ${sanitizeText(event.days.join(', '))}`));
+            card.appendChild(daysLine);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'event-card-actions';
+        actions.appendChild(
+            createActionButton(t('eventEdit'), 'btn btn-secondary', 'Edit event', () => editEvent(event.id))
+        );
+        actions.appendChild(
+            createActionButton(t('eventDelete'), 'btn btn-danger', 'Delete event', () => deleteEvent(event.id))
+        );
+        card.appendChild(actions);
+
+        list.appendChild(card);
+    });
 }
 
 async function saveEventToGitHub(eventData) {
@@ -1068,10 +1221,10 @@ function calculateStatistics() {
 }
 
 function displayStatistics(stats) {
-    document.getElementById('totalRegistrations').textContent = stats.total;
-    document.getElementById('attendedCount').textContent = stats.attended;
-    document.getElementById('missedCount').textContent = stats.missed;
-    document.getElementById('averageRating').textContent = stats.avgRating;
+    setText(document.getElementById('totalRegistrations'), stats.total);
+    setText(document.getElementById('attendedCount'), stats.attended);
+    setText(document.getElementById('missedCount'), stats.missed);
+    setText(document.getElementById('averageRating'), stats.avgRating);
 }
 
 // ============================================================================

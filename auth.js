@@ -123,6 +123,20 @@ const TRANSLATIONS = {
 
 let currentLanguage = 'uk';
 
+function sanitizeText(value) {
+    return DOMPurify.sanitize(String(value ?? ''), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+}
+
+function setText(el, value) {
+    if (!el) return;
+    el.textContent = sanitizeText(value);
+}
+
+function setPlaceholder(el, value) {
+    if (!el) return;
+    el.setAttribute('placeholder', sanitizeText(value));
+}
+
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
@@ -164,7 +178,7 @@ function applyTheme(theme) {
 
     const toggleBtn = document.getElementById('themeToggle');
     if (toggleBtn) {
-        toggleBtn.textContent = isDark ? t('themeLight') : t('themeDark');
+        setText(toggleBtn, isDark ? t('themeLight') : t('themeDark'));
         toggleBtn.setAttribute('aria-pressed', String(isDark));
     }
 }
@@ -196,14 +210,14 @@ function applyLanguage(language) {
     document.querySelectorAll('[data-i18n]').forEach((el) => {
         const key = el.getAttribute('data-i18n');
         if (translations[key]) {
-            el.textContent = translations[key];
+            setText(el, translations[key]);
         }
     });
 
     document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
         const key = el.getAttribute('data-i18n-placeholder');
         if (translations[key]) {
-            el.setAttribute('placeholder', translations[key]);
+            setPlaceholder(el, translations[key]);
         }
     });
 }
@@ -449,7 +463,7 @@ async function handleLogin() {
 function showLoginError(message) {
     const errorDiv = document.getElementById('loginError');
     const errorText = document.getElementById('loginErrorText');
-    errorText.textContent = message;
+    setText(errorText, message);
     errorDiv.style.display = 'block';
     
     setTimeout(() => {
@@ -460,7 +474,7 @@ function showLoginError(message) {
 function showLoginSuccess(message) {
     const successDiv = document.getElementById('loginSuccess');
     const successText = document.getElementById('loginSuccessText');
-    successText.textContent = message;
+    setText(successText, message);
     successDiv.style.display = 'block';
 }
 
@@ -535,7 +549,7 @@ function handleRegistration() {
 function showRegisterError(message) {
     const errorDiv = document.getElementById('registerError');
     const errorText = document.getElementById('registerErrorText');
-    errorText.textContent = message;
+    setText(errorText, message);
     errorDiv.style.display = 'block';
     
     setTimeout(() => {
@@ -546,7 +560,7 @@ function showRegisterError(message) {
 function showRegisterSuccess(message) {
     const successDiv = document.getElementById('registerSuccess');
     const successText = document.getElementById('registerSuccessText');
-    successText.textContent = message;
+    setText(successText, message);
     successDiv.style.display = 'block';
 }
 

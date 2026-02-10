@@ -36,6 +36,27 @@ const CONFIG = {
 let currentUser = null;
 let encryptionKey = null;
 
+function sanitizeText(value) {
+    return DOMPurify.sanitize(String(value ?? ''), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+}
+
+function setText(el, value) {
+    if (!el) return;
+    el.textContent = sanitizeText(value);
+}
+
+function setPlaceholder(el, value) {
+    if (!el) return;
+    el.setAttribute('placeholder', sanitizeText(value));
+}
+
+function clearElement(el) {
+    if (!el) return;
+    while (el.firstChild) {
+        el.removeChild(el.firstChild);
+    }
+}
+
 const TRANSLATIONS = {
     uk: {
         pageTitle: 'Реєстрація',
@@ -192,7 +213,7 @@ async function checkAuthOnLoad() {
     const userEmailSpan = document.getElementById('userEmail');
     
     if (userInfo && userEmailSpan) {
-        userEmailSpan.textContent = userEmail;
+        setText(userEmailSpan, userEmail);
         userInfo.style.display = 'flex';
     }
 
@@ -211,7 +232,7 @@ function clearSessionAndRedirect() {
 function setupLogoutButton() {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
-        logoutBtn.textContent = t('logoutButton');
+        setText(logoutBtn, t('logoutButton'));
         logoutBtn.addEventListener('click', () => {
             // Clear session
             localStorage.removeItem(USER_SESSION_KEY);
@@ -459,14 +480,18 @@ async function populateEventSelect() {
     if (!eventSelect || !eventIdInput) return;
 
     // Clear existing options except the placeholder
-    eventSelect.innerHTML = '<option value="">-- Select an event --</option>';
+    clearElement(eventSelect);
+    const placeholderOption = document.createElement('option');
+    placeholderOption.value = '';
+    setText(placeholderOption, '-- Select an event --');
+    eventSelect.appendChild(placeholderOption);
 
     // Add all available events as options
     if (eventsCache && eventsCache.length > 0) {
         eventsCache.forEach(event => {
             const option = document.createElement('option');
             option.value = event.id;
-            option.textContent = event.name;
+            setText(option, event.name);
             eventSelect.appendChild(option);
         });
         setSubmitEnabled(true);
@@ -668,8 +693,10 @@ async function loadQueueStats() {
         displayQueueStats(stats);
     } catch (err) {
         console.error('Error loading stats:', err);
-        document.getElementById('queueStats').innerHTML = 
-            `<p>${t('statsLoadError')}</p>`;
+        const statsEl = document.getElementById('queueStats');
+        if (statsEl) {
+            setText(statsEl, t('statsLoadError'));
+        }
     }
 }
 
@@ -700,13 +727,18 @@ async function fetchQueueData() {
  */
 function displayQueueStats(stats) {
     const statsDiv = document.getElementById('queueStats');
+    if (!statsDiv) return;
     const total = stats.total || stats.totalRegistrations || 0;
-    
-    let html = `<div>
-        <p><strong>${t('statsTotal')}</strong> ${total}</p>
-    </div>`;
 
-    statsDiv.innerHTML = html;
+    clearElement(statsDiv);
+    const wrapper = document.createElement('div');
+    const p = document.createElement('p');
+    const strong = document.createElement('strong');
+    setText(strong, t('statsTotal'));
+    p.appendChild(strong);
+    p.appendChild(document.createTextNode(` ${sanitizeText(String(total))}`));
+    wrapper.appendChild(p);
+    statsDiv.appendChild(wrapper);
 }
 
 async function updateStats(registrations) {
@@ -744,7 +776,7 @@ function applyTheme(theme) {
 
     const toggleBtn = document.getElementById('themeToggle');
     if (toggleBtn) {
-        toggleBtn.textContent = isDark ? t('themeLight') : t('themeDark');
+        setText(toggleBtn, isDark ? t('themeLight') : t('themeDark'));
         toggleBtn.setAttribute('aria-pressed', String(isDark));
     }
 }
@@ -771,19 +803,19 @@ function applyLanguage(language) {
     const translations = TRANSLATIONS[language] || TRANSLATIONS.uk;
 
     document.documentElement.lang = language;
-    document.title = translations.pageTitle;
+    document.title = sanitizeText(translations.pageTitle);
 
     document.querySelectorAll('[data-i18n]').forEach((el) => {
         const key = el.getAttribute('data-i18n');
         if (translations[key]) {
-            el.textContent = translations[key];
+            setText(el, translations[key]);
         }
     });
 
     document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
         const key = el.getAttribute('data-i18n-placeholder');
         if (translations[key]) {
-            el.setAttribute('placeholder', translations[key]);
+            setPlaceholder(el, translations[key]);
         }
     });
 }
@@ -796,12 +828,12 @@ function t(key) {
 function showSuccess(userId) {
     document.getElementById('registrationForm').style.display = 'none';
     document.getElementById('successMessage').style.display = 'block';
-    document.getElementById('queueNumber').textContent = userId;
+    setText(document.getElementById('queueNumber'), userId);
 }
 
 function showError(message) {
     document.getElementById('errorMessage').style.display = 'block';
-    document.getElementById('errorText').textContent = message;
+    setText(document.getElementById('errorText'), message);
     
     setTimeout(() => {
         document.getElementById('errorMessage').style.display = 'none';
