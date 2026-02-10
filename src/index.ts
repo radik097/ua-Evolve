@@ -28,6 +28,16 @@ export default {
             try {
                 const body: EventPayload = await request.json();
                 console.log('Received payload:', JSON.stringify(body, null, 2));
+
+                // Country restriction: only allow requests from Australia
+                const country = request.cf?.country;
+                if (country !== 'AU') {
+                    console.warn('Blocked non-AU request:', country ?? 'unknown');
+                    return new Response(JSON.stringify({ error: 'Forbidden' }), {
+                        status: 403,
+                        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+                    });
+                }
         
                 // 1. Validate HMAC signature
                 console.log('Validating HMAC with APP_SECRET:', env.APP_SECRET ? 'present' : 'missing');
