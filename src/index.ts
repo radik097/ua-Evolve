@@ -95,6 +95,13 @@ export default {
             });
         }
 
+        // Robots.txt - disallow all indexing
+        if (url.pathname === '/robots.txt') {
+            return new Response('User-agent: *\nDisallow: /', {
+                headers: { 'Content-Type': 'text/plain' },
+            });
+        }
+
         // Root path - show available endpoints
         if (url.pathname === '/') {
             return new Response(JSON.stringify({
