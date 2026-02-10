@@ -62,6 +62,7 @@ export default {
                         'Authorization': `token ${env.GITHUB_TOKEN}`,
                         'Accept': 'application/vnd.github.v3+json',
                         'Content-Type': 'application/json',
+                        'User-Agent': 'event-worker/2.0 (Cloudflare Worker)',
                     },
                     body: JSON.stringify({
                         event_type: body.type,
