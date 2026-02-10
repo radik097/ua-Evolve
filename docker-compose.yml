@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  queue-app:
+    build: .
+    container_name: queue-app
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/usr/share/nginx/html:ro
+      - ./data:/usr/share/nginx/html/data
+    environment:
+      - TZ=Europe/Moscow
+    restart: unless-stopped
+    networks:
+      - queue-network
+
+  # Optional: Local webhook receiver for development
+  webhook-receiver:
+    image: node:18-alpine
+    container_name: webhook-receiver
+    working_dir: /app
+    volumes:
+      - ./webhook-server.js:/app/index.js:ro
+      - ./data:/app/data
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    command: node index.js
+    restart: unless-stopped
+    networks:
+      - queue-network
+
+networks:
+  queue-network:
+    driver: bridge

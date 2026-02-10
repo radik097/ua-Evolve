@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Адмін-панель</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="container admin-container">
+        <header>
+            <div class="header-flex">
+                <h1 data-i18n="adminHeaderTitle">🔐 Адмін-панель</h1>
+                <select id="languageSelect" class="lang-select" aria-label="Мова">
+                    <option value="uk">Українська</option>
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                </select>
+                <button id="themeToggle" class="btn btn-secondary" type="button" aria-pressed="false">🌙 Темна тема</button>
+                <button id="logoutBtn" class="btn btn-secondary" style="display: none;" data-i18n="logoutButton">Вихід</button>
+            </div>
+            <p data-i18n="adminHeaderSubtitle">Керування реєстраціями та подіями</p>
+        </header>
+
+        <!-- Вход -->
+        <section id="loginSection" class="login-section">
+            <h2 data-i18n="loginTitle">Вхід в адмінку</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="adminPassword" data-i18n="loginPasswordLabel">Пароль *</label>
+                    <input 
+                        type="password" 
+                        id="adminPassword" 
+                        placeholder="Введіть пароль"
+                        data-i18n-placeholder="loginPasswordPlaceholder"
+                        required
+                    >
+                    <small data-i18n="loginPasswordHelper">Використовується SHA256 хеш для безпеки</small>
+                </div>
+                <button type="submit" class="btn btn-submit" data-i18n="loginButton">Увійти</button>
+            </form>
+            <div id="loginError" class="error-message" style="display: none;"></div>
+        </section>
+
+        <!-- Основной контент (скрыт до авторизации) -->
+        <div id="adminContent" style="display: none;">
+            <!-- Навигация -->
+            <nav class="admin-nav">
+                <button class="nav-btn active" data-section="registrations" data-i18n="navRegistrations">📋 Реєстрації</button>
+                <button class="nav-btn" data-section="events" data-i18n="navEvents">📅 Події</button>
+                <button class="nav-btn" data-section="statistics" data-i18n="navStatistics">📊 Статистика</button>
+                <button class="nav-btn" data-section="settings" data-i18n="navSettings">⚙️ Налаштування</button>
+            </nav>
+
+            <!-- РАЗДЕЛ 1: Регистрации -->
+            <section id="registrations" class="admin-section active">
+                <h2 data-i18n="registrationsTitle">📋 Реєстрації</h2>
+                
+                <div class="admin-toolbar">
+                    <div class="search-box">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Пошук за ім'ям або телефоном..."
+                            data-i18n-placeholder="searchPlaceholder"
+                        >
+                    </div>
+                    <select id="eventFilterSelect">
+                        <option value="" data-i18n="filterAll">Усі записи</option>
+                    </select>
+                    <button id="exportBtn" class="btn btn-secondary" data-i18n="exportCsv">📥 Завантажити CSV</button>
+                    <button id="refreshBtn" class="btn btn-primary" data-i18n="refreshBtn">🔄 Оновити</button>
+                    <span id="lastRefresh" class="refresh-indicator" data-i18n="lastRefreshPlaceholder">Останнє оновлення: —</span>
+                </div>
+
+                <div id="registrationsList" class="registrations-list">
+                    <p data-i18n="registrationsLoading">Завантаження...</p>
+                </div>
+            </section>
+
+            <!-- РАЗДЕЛ 2: События -->
+            <section id="events" class="admin-section">
+                <h2 data-i18n="eventsTitle">📅 Події</h2>
+                
+                <div class="event-form">
+                    <h3 data-i18n="addEventTitle">Додати нову подію</h3>
+                    <form id="eventForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="eventName" data-i18n="eventNameLabel">Назва *</label>
+                                <input type="text" id="eventName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="eventType" data-i18n="eventTypeLabel">Тип *</label>
+                                <select id="eventType" required>
+                                    <option value="once" data-i18n="eventTypeOnce">Одноразова</option>
+                                    <option value="weekly" data-i18n="eventTypeWeekly">Щотижнева</option>
+                                    <option value="monthly" data-i18n="eventTypeMonthly">Щомісячна</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="eventStart" data-i18n="eventStartLabel">Початок (час) *</label>
+                                <input type="time" id="eventStart" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="eventEnd" data-i18n="eventEndLabel">Кінець (час) *</label>
+                                <input type="time" id="eventEnd" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="eventDays" data-i18n="eventDaysLabel">Дні тижня (для щотижневих)</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" name="day" value="0"> <span data-i18n="dayMon">Пн</span></label>
+                                <label><input type="checkbox" name="day" value="1"> <span data-i18n="dayTue">Вт</span></label>
+                                <label><input type="checkbox" name="day" value="2"> <span data-i18n="dayWed">Ср</span></label>
+                                <label><input type="checkbox" name="day" value="3"> <span data-i18n="dayThu">Чт</span></label>
+                                <label><input type="checkbox" name="day" value="4"> <span data-i18n="dayFri">Пт</span></label>
+                                <label><input type="checkbox" name="day" value="5"> <span data-i18n="daySat">Сб</span></label>
+                                <label><input type="checkbox" name="day" value="6"> <span data-i18n="daySun">Нд</span></label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-submit" data-i18n="addEventButton">+ Додати подію</button>
+                    </form>
+                </div>
+
+                <h3 data-i18n="existingEventsTitle">Наявні події</h3>
+                <div id="eventsList" class="events-list">
+                    <p data-i18n="eventsLoading">Завантаження...</p>
+                </div>
+            </section>
+
+            <!-- РАЗДЕЛ 3: Статистика -->
+            <section id="statistics" class="admin-section">
+                <h2 data-i18n="statisticsTitle">📊 Статистика</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 data-i18n="statTotal">Всього реєстрацій</h3>
+                        <p class="stat-value" id="totalRegistrations">-</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 data-i18n="statAttended">Присутні</h3>
+                        <p class="stat-value" id="attendedCount">-</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 data-i18n="statMissed">Не прийшли</h3>
+                        <p class="stat-value" id="missedCount">-</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 data-i18n="statAvgRating">Середній рейтинг</h3>
+                        <p class="stat-value" id="averageRating">-</p>
+                    </div>
+                </div>
+
+                <div class="charts-section">
+                    <div class="chart-placeholder">
+                        <h4 data-i18n="chartTitle">Графік реєстрацій за часом</h4>
+                        <p data-i18n="chartPlaceholder">📈 Візуалізацію буде додано</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- РАЗДЕЛ 4: Настройки -->
+            <section id="settings" class="admin-section">
+                <h2 data-i18n="settingsTitle">⚙️ Налаштування</h2>
+                
+                <div class="settings-form">
+                    <h3 data-i18n="settingsRepoTitle">GitHub репозиторій</h3>
+                    <div class="form-group">
+                        <label data-i18n="settingsOwnerLabel">Власник репозиторію</label>
+                        <input type="text" id="settingsOwner" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="settingsRepoLabel">Назва репозиторію</label>
+                        <input type="text" id="settingsRepo" readonly>
+                    </div>
+
+                    <h3 data-i18n="settingsPasswordTitle">Пароль адмінки</h3>
+                    <p><small data-i18n="settingsPasswordHint">Пароль зберігається локально і порівнюється через SHA256 хеш</small></p>
+                    <div class="form-group">
+                        <label for="newPassword" data-i18n="settingsNewPasswordLabel">Новий пароль</label>
+                        <input type="password" id="newPassword" placeholder="Залиште порожнім, щоб не змінювати" data-i18n-placeholder="settingsNewPasswordPlaceholder">
+                    </div>
+                    <button id="saveSettingsBtn" class="btn btn-submit" data-i18n="saveSettingsButton">💾 Зберегти налаштування</button>
+                </div>
+
+                <h3 data-i18n="dangerZoneTitle">Небезпечна зона</h3>
+                <div class="danger-zone">
+                    <button id="clearDataBtn" class="btn btn-danger" data-i18n="clearDataButton">🗑️ Очистити всі дані</button>
+                    <p><small data-i18n="dangerZoneHint">Це видалить усі локальні дані. Дані на GitHub залишаться.</small></p>
+                </div>
+            </section>
+        </div>
+
+        <footer>
+            <p><a href="index.html" data-i18n="backToSite">← Повернутися на сайт</a></p>
+        </footer>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

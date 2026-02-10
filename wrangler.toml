@@ -1,0 +1,7 @@
+name = "event-worker"
+main = "src/index.ts"
+compatibility_date = "2026-02-10"
+
+[vars]
+GITHUB_REPO = "owner/repo"
+GITHUB_BRANCH = "main"

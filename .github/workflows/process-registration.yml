@@ -1,0 +1,68 @@
+name: Process Registration
+
+on:
+  repository_dispatch:
+    types: [new_registration]
+  workflow_dispatch:
+
+jobs:
+  process-registration:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Validate and save registration
+        env:
+          REGISTRATION_DATA: ${{ github.event.client_payload.data }}
+        run: |
+          # Create data directory
+          mkdir -p data/registrations
+          
+          # Generate filename from ID
+          FILENAME="data/registrations/${{ github.event.client_payload.id }}.json"
+          
+          # Save registration data
+          echo "$REGISTRATION_DATA" > "$FILENAME"
+          
+          echo "✓ Registration saved: $FILENAME"
+
+      - name: Commit changes
+        run: |
+          git config user.name "Queue Bot"
+          git config user.email "queue-bot@example.com"
+          
+          # Add files
+          git add data/registrations/*.json
+          
+          # Check if there are changes
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Register: ${{ github.event.client_payload.name }}"
+            git push
+          fi
+
+      - name: Update statistics
+        run: |
+          # Count registrations
+          TOTAL=$(find data/registrations -name "*.json" | wc -l)
+          
+          # Create or update stats.json
+          cat > stats.json << EOF
+          {
+            "totalRegistrations": $TOTAL,
+            "lastUpdated": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          }
+          EOF
+          
+          echo "✓ Statistics: $TOTAL registrations"
+
+      - name: Commit statistics
+        run: |
+          git add stats.json
+          git commit -m "Update statistics: $TOTAL registrations" --allow-empty
+          git push

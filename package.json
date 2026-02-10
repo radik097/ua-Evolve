@@ -1,0 +1,35 @@
+{
+  "name": "queue-app",
+  "version": "1.0.0",
+  "description": "Autonomous queue system for webinars with GitHub Pages",
+  "main": "webhook-server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node webhook-server.js",
+    "dev": "http-server -p 8080 -c-1",
+    "test": "node tests/app.test.mjs",
+    "test:headed": "HEADLESS=false node tests/app.test.mjs",
+    "docker:build": "docker build -t queue-app .",
+    "docker:run": "docker run -p 8080:80 queue-app",
+    "docker:compose": "docker-compose up"
+  },
+  "keywords": [
+    "queue",
+    "registration",
+    "webinar",
+    "github-pages",
+    "github-actions",
+    "playwright",
+    "testing"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "playwright": "^1.48.0",
+    "wrangler": "^4.63.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

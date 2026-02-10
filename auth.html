@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход / Регистрация</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+    <div class="container auth-container">
+        <header>
+            <h1 data-i18n="authTitle">📋 Queue App</h1>
+            <p data-i18n="authSubtitle">Система управления очередью</p>
+            <div class="header-actions">
+                <button id="themeToggle" class="btn btn-secondary" type="button" aria-pressed="false">
+                    🌙 Темна тема
+                </button>
+                <select id="languageSelect" class="lang-select" aria-label="Мова">
+                    <option value="uk">Українська</option>
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- TAB NAVIGATION -->
+        <div class="auth-tabs">
+            <button class="tab-btn active" data-tab="login" data-i18n="tabLogin">🔓 Вход</button>
+            <button class="tab-btn" data-tab="register" data-i18n="tabRegister">✏️ Регистрация</button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <section id="loginTab" class="auth-tab active">
+            <h2 data-i18n="loginTitle">Вход в аккаунт</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail" data-i18n="labelEmail">Email *</label>
+                    <input 
+                        type="email" 
+                        id="loginEmail" 
+                        name="email" 
+                        placeholder="your@email.com"
+                        data-i18n-placeholder="placeholderEmail"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword" data-i18n="labelPassword">Пароль *</label>
+                    <input 
+                        type="password" 
+                        id="loginPassword" 
+                        name="password" 
+                        placeholder="Введите пароль"
+                        data-i18n-placeholder="placeholderPassword"
+                        required
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-submit" data-i18n="loginButton">🔓 Войти</button>
+            </form>
+
+            <div id="loginError" class="message error" style="display: none;">
+                <p id="loginErrorText"></p>
+            </div>
+
+            <div id="loginSuccess" class="message success" style="display: none;">
+                <p id="loginSuccessText"></p>
+            </div>
+        </section>
+
+        <!-- REGISTER FORM -->
+        <section id="registerTab" class="auth-tab">
+            <h2 data-i18n="registerTitle">Создать новый аккаунт</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="registerName" data-i18n="labelFullName">ФИО *</label>
+                    <input 
+                        type="text" 
+                        id="registerName" 
+                        name="fullName" 
+                        placeholder="Ваше полное имя"
+                        data-i18n-placeholder="placeholderFullName"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="registerEmail" data-i18n="labelEmail">Email *</label>
+                    <input 
+                        type="email" 
+                        id="registerEmail" 
+                        name="email" 
+                        placeholder="your@email.com"
+                        data-i18n-placeholder="placeholderEmail"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPhone" data-i18n="labelPhone">Телефон</label>
+                    <input 
+                        type="tel" 
+                        id="registerPhone" 
+                        name="phone" 
+                        placeholder="+61 (__) ___-__-__"
+                        data-i18n-placeholder="placeholderPhone"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPassword" data-i18n="labelPassword">Пароль *</label>
+                    <input 
+                        type="password" 
+                        id="registerPassword" 
+                        name="password" 
+                        placeholder="Минимум 6 символов"
+                        data-i18n-placeholder="placeholderPasswordMin"
+                        required
+                        minlength="6"
+                    >
+                    <small data-i18n="passwordHint">Пароль должен содержать минимум 6 символов</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPassword2" data-i18n="labelPasswordConfirm">Повторите пароль *</label>
+                    <input 
+                        type="password" 
+                        id="registerPassword2" 
+                        name="passwordConfirm" 
+                        placeholder="Повторите пароль"
+                        data-i18n-placeholder="placeholderPasswordConfirm"
+                        required
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-submit" data-i18n="registerButton">✏️ Зарегистрироваться</button>
+            </form>
+
+            <div id="registerError" class="message error" style="display: none;">
+                <p id="registerErrorText"></p>
+            </div>
+
+            <div id="registerSuccess" class="message success" style="display: none;">
+                <p id="registerSuccessText"></p>
+            </div>
+        </section>
+
+        <!-- DEMO INFO -->
+        <section class="demo-info">
+            <h3 data-i18n="demoTitle">📌 Demo аккаунты</h3>
+            <p data-i18n="demoDesc">Для тестирования используйте:</p>
+            <code>
+                Email: demo@example.com<br>
+                Пароль: demo123
+            </code>
+        </section>
+    </div>
+
+    <script src="./lib/sha256.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>

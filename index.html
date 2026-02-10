@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Реєстрація</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <div>
+                    <h1 data-i18n="headerTitle">📝 Реєстрація</h1>
+                    <p data-i18n="headerSubtitle">Заповніть форму</p>
+                </div>
+                <div id="userInfo" class="user-info" style="display: none;">
+                    <span id="userEmail"></span>
+                    <button id="logoutBtn" class="btn btn-secondary" data-i18n="logoutButton">Вихід</button>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="themeToggle" class="btn btn-secondary" type="button" aria-pressed="false">
+                    🌙 Темна тема
+                </button>
+                <select id="languageSelect" class="lang-select" aria-label="Мова">
+                    <option value="uk">Українська</option>
+                    <option value="ru">Русский</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- Форма регистрации -->
+        <section class="registration-form">
+            <form id="registrationForm">
+                <div class="form-group">
+                    <label for="name" data-i18n="labelName">Ім'я *</label>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        name="name" 
+                        placeholder="Ваше ім'я"
+                        data-i18n-placeholder="placeholderName"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="phone" data-i18n="labelPhone">Телефон</label>
+                    <input 
+                        type="tel" 
+                        id="phone" 
+                        name="phone" 
+                        placeholder="+61 (__) ___-__-__"
+                        data-i18n-placeholder="placeholderPhone"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="eventSelect" data-i18n="labelEvent">Подія *</label>
+                    <select
+                        id="eventSelect"
+                        name="eventSelect"
+                        required
+                        data-i18n-placeholder="placeholderEvent"
+                    >
+                        <option value="">-- Select an event --</option>
+                    </select>
+                    <input type="hidden" id="eventId" name="eventId">
+                </div>
+
+                <button type="submit" class="btn btn-submit">
+                    <span data-i18n="submitButton">✓ Зареєструватися</span>
+                </button>
+            </form>
+
+            <div id="successMessage" class="message success" style="display: none;">
+                <h3 data-i18n="successTitle">✓ Успішно!</h3>
+                <p><span data-i18n="successText">Ви зареєстровані. Номер черги:</span> <strong id="queueNumber"></strong></p>
+                <button onclick="location.reload()" class="btn btn-secondary">
+                    <span data-i18n="successBack">Повернутися до форми</span>
+                </button>
+            </div>
+
+            <div id="errorMessage" class="message error" style="display: none;">
+                <h3 data-i18n="errorTitle">✗ Помилка</h3>
+                <p id="errorText"></p>
+            </div>
+        </section>
+
+        <!-- Просмотр очереди -->
+        <section class="queue-section">
+            <h2 data-i18n="statsTitle">📊 Статистика реєстрацій</h2>
+            <div id="queueStats">
+                <p data-i18n="statsLoading">Завантаження...</p>
+            </div>
+        </section>
+
+        <!-- Ссылка на админку -->
+        <footer>
+            <p><a href="admin.html" data-i18n="adminLink">🔐 Адмін-панель</a></p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
