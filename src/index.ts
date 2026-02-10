@@ -95,6 +95,21 @@ export default {
             });
         }
 
+        // Root path - show available endpoints
+        if (url.pathname === '/') {
+            return new Response(JSON.stringify({
+                name: 'event-worker',
+                version: '2.0.0',
+                endpoints: {
+                    health: '/health',
+                    api: '/api/github (POST only, requires HMAC signature)'
+                },
+                repository: 'radik097/ua-Evolve'
+            }), {
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            });
+        }
+
         return new Response(JSON.stringify({ error: 'Not found' }), {
             status: 404,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
