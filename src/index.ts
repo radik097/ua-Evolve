@@ -67,7 +67,7 @@ export default {
                     body: JSON.stringify({
                         event_type: body.type,
                         client_payload: {
-                            ...body.data,
+                            registration: body.data,
                             submitted_at: new Date(body.timestamp).toISOString(),
                         },
                     }),
