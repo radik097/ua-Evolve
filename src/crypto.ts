@@ -3,7 +3,7 @@
  * Verifies that requests from frontend are legitimately signed
  */
 
-export function verifyHMAC(payload: any, secret: string): boolean {
+export async function verifyHMAC(payload: any, secret: string): Promise<boolean> {
     if (!payload.signature) {
         return false;
     }
@@ -14,8 +14,8 @@ export function verifyHMAC(payload: any, secret: string): boolean {
     const { signature: _, ...payloadWithoutSignature } = payload;
     const payloadString = JSON.stringify(payloadWithoutSignature);
 
-    // Compute HMAC-SHA256
-    const computedSignature = computeHmac(secret, payloadString);
+    // Compute HMAC-SHA256 using SubtleCrypto
+    const computedSignature = await computeHmacAsync(secret, payloadString);
     
     // Constant-time comparison to prevent timing attacks
     return constantTimeCompare(signature, computedSignature);
@@ -37,62 +37,6 @@ async function computeHmacAsync(secret: string, message: string): Promise<string
     
     const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
     return bytesToHex(new Uint8Array(signature));
-}
-
-/**
- * Synchronous HMAC-SHA256 (fallback for encoding)
- * Uses built-in crypto module in Node.js compatible environments
- */
-function computeHmac(secret: string, message: string): string {
-    // This will work in Node.js environments; Cloudflare Workers support SubtleCrypto
-    // For true async support, code calling this should be async
-    const key = secret;
-    const msg = message;
-    
-    // Simple hex-based HMAC construction for preview
-    // In production, use crypto.subtle for full support
-    try {
-        // @ts-ignore - Using Web Crypto in Worker context
-        if (typeof crypto !== 'undefined' && crypto.subtle) {
-            // Return a placeholder; actual implementation uses async/await
-            // This sync version is for validation structure only
-            return sha256hmac(key, msg);
-        }
-    } catch (e) {
-        console.error('Crypto error:', e);
-    }
-    
-    return sha256hmac(key, msg);
-}
-
-/**
- * SHA256-HMAC implementation (compatibility function)
- * Used as fallback or for environments without SubtleCrypto
- */
-function sha256hmac(key: string, message: string): string {
-    // Basic HMAC-SHA256 pattern (simplified for demonstration)
-    // Production code should use crypto.subtle.sign('HMAC', key, message)
-    
-    const blockSize = 64;
-    const outputSize = 32;
-    
-    let keyBytes = new TextEncoder().encode(key);
-    if (keyBytes.length > blockSize) {
-        keyBytes = new Uint8Array(32); // Would hash key if longer
-    }
-    
-    const ipad = new Uint8Array(blockSize);
-    const opad = new Uint8Array(blockSize);
-    
-    for (let i = 0; i < blockSize; i++) {
-        const keyByte = i < keyBytes.length ? keyBytes[i] : 0;
-        ipad[i] = keyByte ^ 0x36;
-        opad[i] = keyByte ^ 0x5c;
-    }
-    
-    // This is simplified; real implementation needs SHA256
-    // Returning empty string as placeholder
-    return '';
 }
 
 /**

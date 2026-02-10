@@ -27,25 +27,35 @@ export default {
         if (url.pathname === '/api/github' && request.method === 'POST') {
             try {
                 const body: EventPayload = await request.json();
+                console.log('Received payload:', JSON.stringify(body, null, 2));
         
                 // 1. Validate HMAC signature
-                if (!verifyHMAC(body, env.APP_SECRET)) {
+                console.log('Validating HMAC with APP_SECRET:', env.APP_SECRET ? 'present' : 'missing');
+                const isValidHMAC = await verifyHMAC(body, env.APP_SECRET);
+                if (!isValidHMAC) {
+                    console.error('HMAC validation failed');
                     return new Response(JSON.stringify({ error: 'Invalid signature' }), {
                         status: 401,
                         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
                     });
                 }
+                console.log('HMAC validation passed');
 
                 // 2. Validate timestamp (60 second window)
                 const now = Date.now();
-                if (Math.abs(now - body.timestamp) > 60000) {
+                const timeDiff = Math.abs(now - body.timestamp);
+                console.log('Timestamp validation:', { now, received: body.timestamp, diff: timeDiff });
+                if (timeDiff > 60000) {
+                    console.error('Timestamp expired:', timeDiff);
                     return new Response(JSON.stringify({ error: 'Timestamp expired' }), {
                         status: 401,
                         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
                     });
                 }
+                console.log('Timestamp validation passed');
 
                 // 3. Send to GitHub API (repository_dispatch)
+                console.log('Sending to GitHub:', env.GITHUB_REPO);
                 const githubResponse = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/dispatches`, {
                     method: 'POST',
                     headers: {
