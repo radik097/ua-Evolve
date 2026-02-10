@@ -3,5 +3,5 @@ main = "src/index.ts"
 compatibility_date = "2026-02-10"
 
 [vars]
-GITHUB_REPO = "owner/repo"
+GITHUB_REPO = "radik097/ua-Evolve"
 GITHUB_BRANCH = "main"

@@ -16,8 +16,8 @@ const ENC_KEY_USER = 'queue_enc_user';
 // Configuration
 const CONFIG = {
     // GitHub repository configuration
-    GITHUB_OWNER: 'radik098', // Replace with your GitHub username
-    GITHUB_REPO: 'queue-app-data',  // Replace with your repository name
+    GITHUB_OWNER: 'radik097',
+    GITHUB_REPO: 'ua-Evolve',
     GITHUB_BRANCH: 'main',
     // GITHUB_TOKEN: Now stored in Cloudflare Worker secrets only (never expose in frontend!)
     // GitHub API base URL
