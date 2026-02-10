@@ -685,11 +685,12 @@ async function fetchQueueData() {
     try {
         const response = await fetch('/stats.json');
         if (!response.ok) {
-            throw new Error('Failed to fetch queue data');
+            // stats.json doesn't exist yet, return default
+            return { totalRegistrations: 0 };
         }
         return await response.json();
     } catch (err) {
-        console.error('Error:', err);
+        console.warn('Stats file not found, using default:', err);
         return { totalRegistrations: 0 };
     }
 }

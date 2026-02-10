@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HMAC Test</title>
+</head>
+<body>
+    <h1>HMAC Signature Test</h1>
+    <button onclick="testHMAC()">Test HMAC</button>
+    <pre id="output"></pre>
+
+    <script>
+        const APP_SECRET = 'b55b7a462e42c09307e996316207292b1a59cfbfcefa6899e96136e7cbcb0896';
+        const WORKER_URL = 'https://event-worker.ua-evolve.workers.dev/api/github';
+
+        async function computeHmacSignature(payload, secret) {
+            const enc = new TextEncoder();
+            const key = await window.crypto.subtle.importKey(
+                'raw',
+                enc.encode(secret),
+                { name: 'HMAC', hash: 'SHA-256' },
+                false,
+                ['sign']
+            );
+
+            const payloadBytes = enc.encode(JSON.stringify(payload));
+            const signature = await window.crypto.subtle.sign('HMAC', key, payloadBytes);
+            return bytesToHex(new Uint8Array(signature));
+        }
+
+        function bytesToHex(bytes) {
+            return Array.from(bytes)
+                .map((b) => b.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        async function testHMAC() {
+            const output = document.getElementById('output');
+            output.textContent = 'Testing...\n';
+
+            const requestPayload = {
+                type: 'test',
+                data: { message: 'Hello from test' },
+                timestamp: Date.now()
+            };
+
+            output.textContent += `\n1. Request payload (before signature):\n${JSON.stringify(requestPayload, null, 2)}\n`;
+
+            const signature = await computeHmacSignature(requestPayload, APP_SECRET);
+            output.textContent += `\n2. Computed signature:\n${signature}\n`;
+
+            const signedPayload = { ...requestPayload, signature };
+            output.textContent += `\n3. Signed payload:\n${JSON.stringify(signedPayload, null, 2)}\n`;
+
+            try {
+                const response = await fetch(WORKER_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(signedPayload)
+                });
+
+                output.textContent += `\n4. Worker response status: ${response.status}\n`;
+                const responseText = await response.text();
+                output.textContent += `\n5. Worker response body:\n${responseText}\n`;
+
+                if (!response.ok) {
+                    output.textContent += `\n❌ ERROR: HMAC validation failed!\n`;
+                } else {
+                    output.textContent += `\n✅ SUCCESS: HMAC validation passed!\n`;
+                }
+            } catch (err) {
+                output.textContent += `\n❌ Fetch error: ${err.message}\n`;
+            }
+        }
+    </script>
+</body>
+</html>
